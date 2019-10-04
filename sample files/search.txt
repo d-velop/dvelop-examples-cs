@@ -1,0 +1,1 @@
+﻿?sourceid=/demo-mapping/sources/sourcesample1&sourcecategories=["correspondance"]&sourceproperties={"entrydate":["2018-03-11"]}

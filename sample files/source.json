@@ -1,0 +1,46 @@
+﻿{
+	"sources" : [{
+		"id" : "/demo-mapping/sources/sourcesample1",
+		"displayName" : "Test source 1 for tp-dev samples",
+    "categories": [
+      {
+        "key": "correspondance",
+        "displayName": "correspondance"
+      },
+      {
+        "key": "invoice",
+        "displayName": "invoice"
+      }
+    ],
+    "properties": [
+      {
+        "key": "subject",
+        "displayName": "subject"
+      },
+      {
+        "key": "entrydate",
+        "displayName": "entrydate"
+      },
+      {
+        "key": "customerno",
+        "displayName": "customerno"
+      },
+      {
+        "key": "customer",
+        "displayName": "customer"
+      },
+      {
+        "key": "documentno",
+        "displayName": "documentno"
+      },
+      {
+        "key": "vendorno",
+        "displayName": "vendorno"
+      },
+      {
+        "key": "vendor",
+        "displayName": "vendor"
+      }
+    ]
+	}]
+}

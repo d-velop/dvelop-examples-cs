@@ -1,0 +1,26 @@
+﻿{
+	"filename":"upload.pdf",
+	"sourceCategory":"correspondance",
+	"sourceId":"/demo-mapping/sources/sourcesample1",
+	"contentLocationUri":"<to be replaced>",
+	"sourceProperties":{
+    "properties": [
+      {
+        "key": "subject",
+        "values": [ "Hello world!" ]
+      },
+      {
+        "key": "customerno",
+        "values": [ "4711" ]
+      },
+      {
+        "key": "customer",
+        "values": [ "ForYou Möbel AG" ]
+      },
+      {
+        "key": "entrydate",
+        "values": [ "2018-03-11" ]
+      }
+    ]
+	}
+}
