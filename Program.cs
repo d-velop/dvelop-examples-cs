@@ -24,18 +24,15 @@ namespace DMSAPISamples
 
             //ONE: you need the base uri of your d.3one instance. To get an instance in the d.velop cloud and to 
             //choose a base uri, click here: https://store.d-velop.de/9/d.velop-documents
-//            var baseURI = @"https://xxxxxxx.d-velop.cloud";
-            var baseURI = @"https://test-dbar4.d-velop.cloud";
+            var baseURI = @"https://xxxxxxx.d-velop.cloud";
 
             //TWO: get an api key for your user in your d.3one instance: In d.one, click on tile "IdentityProvider", 
             //then on the "fingerprint icon" on the right.
-//            var apiKey = @"xxxxxxxxxxxxxxxxxx";
-            var apiKey = @"BYNhvn8F7Dvs1AjDsfzc6JFiWAd8o5eyMejeO/NIASsRi5CS8ScE78Wwxy1dCRqCCWKrtWHXn8pcViu7V6odcS4g1yZgVnwXQWOFEyp10wc=&_z_A0V5ayCQwWUJbRag_CqV9rDY6Ffznns-BcJUcClCcdagCNXUf6bl7JqwN-vEtPRK2WdcaL5e3Rhz370kikslYf6-Hkm-n";
+            var apiKey = @"xxxxxxxxxxxxxxxxxx";
 
             //THREE: get a repository id from your d.3one instance: In d.3one, click on tile "Search", then select 
             //the repository from the combobox on the top, copy the repository id form the browser URL
-//            var repoId = @"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
-            var repoId = @"47f01950-9560-47de-9734-c0afae5fa033";
+            var repoId = @"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
 
             //FOUR: grant user rights: In d.3one click on tile "Usermanagement", select your user and assign the user group 
             //"Kundenakte Vollzugriff". Then log off and sign in.
@@ -143,7 +140,7 @@ namespace DMSAPISamples
 
              
         //search document by given metadata
-        private async static Task<string> SearchDocument(string baseURI, string apiKey, string repoId, string searchStringFile)
+        private async static Task<string> SearchDocument(string baseURI, string sessionId, string repoId, string searchStringFile)
         {
             var link_relation = "/dms/r/" + repoId + "/srm";
             var baseRequest = baseURI + link_relation;
@@ -153,7 +150,7 @@ namespace DMSAPISamples
                 //set Origin header to avoid conflicts with same origin policy
                 client.BaseAddress = new Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + apiKey);
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
 
@@ -181,7 +178,7 @@ namespace DMSAPISamples
             return String.Empty;
         }
 
-        private async static Task<string> GetDocumentInfo(string baseURI, string apiKey, string repoId, string documentLink)
+        private async static Task<string> GetDocumentInfo(string baseURI, string sessionId, string repoId, string documentLink)
         {
 
             var link_relation = documentLink;
@@ -193,7 +190,7 @@ namespace DMSAPISamples
                 //set Origin header to avoid conflicts with same origin policy
                 client.BaseAddress = new Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + apiKey);
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
                 Console.WriteLine("get download url");
@@ -301,7 +298,7 @@ namespace DMSAPISamples
         }
 
 
-        private async static Task<string> UploadFileChunk(string baseURI, string apiKey, string link_relation, string chunkFilePath)
+        private async static Task<string> UploadFileChunk(string baseURI, string sessionId, string link_relation, string chunkFilePath)
         {
             var baseRequest = baseURI + link_relation;
 
@@ -311,7 +308,7 @@ namespace DMSAPISamples
                 //set Origin header to avoid conflicts with same origin policy
                 client.BaseAddress = new System.Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + apiKey);
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
 
                 //set data content type
                 StreamContent data = new StreamContent(new FileStream(chunkFilePath, FileMode.Open, FileAccess.Read, FileShare.Read));
@@ -335,7 +332,7 @@ namespace DMSAPISamples
         }
 
 
-        private static async Task<string> FinishFileUpload(string baseURI, string apiKey, string repoId, string contentLocationUri, string filePath, string uploadMappingFile)
+        private static async Task<string> FinishFileUpload(string baseURI, string sessionId, string repoId, string contentLocationUri, string filePath, string uploadMappingFile)
         {
             var link_relation = "/dms/r/" + repoId + "/o2m";
             var baseRequest = baseURI + link_relation;
@@ -346,7 +343,7 @@ namespace DMSAPISamples
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + apiKey);
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
 
                 //read mapping and replace content location uri
                 dynamic dynObj = JsonConvert.DeserializeObject(File.ReadAllText(uploadMappingFile));
