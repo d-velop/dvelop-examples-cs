@@ -1,26 +1,26 @@
 ﻿{
-	"filename":"upload.pdf",
-	"sourceCategory":"correspondance",
-	"sourceId":"/demo-mapping/sources/sourcesample1",
-	"contentLocationUri":"<to be replaced>",
-	"sourceProperties":{
+  "filename": "upload.pdf",
+  "sourceCategory": "schriftverkehrkunde",
+  "sourceId": "/dvelop/documents",
+  "contentLocationUri": "<to be replaced>",
+  "sourceProperties": {
     "properties": [
       {
-        "key": "subject",
+        "key": "betreff",
         "values": [ "Hello world!" ]
       },
       {
-        "key": "customerno",
+        "key": "kundennummer",
         "values": [ "4711" ]
       },
       {
-        "key": "customer",
+        "key": "kundenname1",
         "values": [ "ForYou Möbel AG" ]
       },
       {
-        "key": "entrydate",
+        "key": "belegdatum",
         "values": [ "2018-03-11" ]
       }
     ]
-	}
+  }
 }
