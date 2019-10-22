@@ -68,12 +68,12 @@
     <None Include="sample files\source.json" />
     <None Include="App.config" />
     <None Include="packages.config" />
-    <Content Include="sample files\search.txt" />
     <None Include="sample files\upload.json" />
     <None Include="sample files\upload.pdf" />
     <None Include="sample files\upload0" />
     <None Include="sample files\upload1" />
     <None Include="sample files\upload2" />
+    <None Include="sample files\upload_update.pdf" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />

@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -24,11 +22,11 @@ namespace DMSAPISamples
 
             //ONE: you need the base uri of your d.3one instance. To get an instance in the d.velop cloud and to 
             //choose a base uri, click here: https://store.d-velop.de/9/d.velop-documents
-            var baseURI = @"https://xxxxxxx.d-velop.cloud";
+            var baseURI = @"https://xxxxxxxxxx.d-velop.cloud";
 
             //TWO: get an api key for your user in your d.3one instance: In d.one, click on tile "IdentityProvider", 
             //then on the "fingerprint icon" on the right.
-            var apiKey = @"xxxxxxxxxxxxxxxxxx";
+            var apiKey = @"xxxxxxxxxxxxxxxxxxxxxx";
 
             //THREE: get a repository id from your d.3one instance: In d.3one, click on tile "Search", then select 
             //the repository from the combobox on the top, copy the repository id form the browser URL
@@ -37,27 +35,26 @@ namespace DMSAPISamples
             //FOUR: grant user rights: In d.3one click on tile "Usermanagement", select your user and assign the user group 
             //"Kundenakte Vollzugriff". Then log off and sign in.
 
-            //FIVE (optional): Provide your own source or proceed with step 6.
-            //This sample is based on the default source "Basisdokumentarten" contained in d.velop documents.
+            //FIVE (optional): Provide your own source or proceed with default source "Basisdokumentarten" contained 
+            //in d.velop documents and step 6.
 
             //SIX: create a mapping between source and content of your d.velop cloud: In d.3one, click on tile "Mappings" and then on 
             //"create new". Select the source (default: "Basisdokumentarten") and map categories and properties.
-            //Category: "Schriftverkehr Kunde" -> "correspondance customer"
-            //Properties: "Betreff" -> "Betreff", "Kunden-Nummer" -> "Customer No", "Kunden-Name1" -> "Kunden-Name1",
-            //"Beleg-Datum" -> "Beleg-Datum", "Dateiname" -> "File name"
+            //Category: "Schriftverkehr Kunde" -> "Schriftverkehr Kunde"
+            //Properties: "Betreff" -> "Betreff (100048)", "Kunden-Nummer" -> "Kunden-Nummer (100124)", "Kunden-Name1" -> "Kunden-Name1 (100147)",
+            //"Beleg-Datum" -> "Beleg-Datum (100046)", "Dateiname" -> "Dateiname (nur lesend)"
 
             //SEVEN: copy sample files from project folder "sample files" to local directory and set filePath to this directory
-            var filePath = @"c:\temp";
+            var filePath = Path.Combine(Path.GetTempPath(), "DMSAPISamples");
 
             //EIGHT: run this code.
 
-
-            //metadata for document upload. In instance tp-dev.d-velop.cloud use the default. Otherwise create your 
-            //own file according to file "upload.json"
+            //url parameters for search sample
+            var searchFor = "?sourceid=/dvelop/documents&sourcecategories=[\"schriftverkehrkunde\"]&sourceproperties={\"belegdatum\":[\"2018-03-11\"]}";
+            //json metadata for document upload sample 
             var uploadMappingFile = Path.Combine(filePath, "upload.json");
-            //metadata for document search. In instance tp-dev.d-velop.cloud use the default. Otherwise create your 
-            //own file according to file "search.txt"
-            var searchStringFile = Path.Combine(filePath, "search.txt");
+
+            //upload file and download path
             var uploadFile = Path.Combine(filePath, "upload.pdf");
             var downloadFilePath = Path.Combine(filePath, "download");
 
@@ -67,7 +64,7 @@ namespace DMSAPISamples
 
             //using apiKey authentication is recommended! 
             //for all further api calls use the returned sessionId as Bearer-Token!
-            var sessionId = AuthenticateBasic(baseURI, "", apiKey);
+            var sessionId = Authenticate(baseURI, apiKey);
 
             if (null != sessionId)
             {
@@ -81,66 +78,57 @@ namespace DMSAPISamples
                 //download document
                 bool downloaded = DownloadDocument(baseURI, sessionId, repoId, documentInfo, downloadFilePath).Result;
                 //search documents
-                var result = SearchDocument(baseURI, sessionId, repoId, searchStringFile).Result;
+                var result = SearchDocument(baseURI, sessionId, repoId, searchFor).Result;
             }
             Console.ReadKey();
         }
 
+        private class AuthSessionInfoDto
+        {
+            public string AuthSessionId { get; set; }
+            public DateTime Expire { get; set; }
+        }
+
         //authenticate with user credentials and basic authentication
-        private static string AuthenticateBasic(string baseURI, string username, string password)
+        private static string Authenticate(string baseURI, string apiKey)
         {
             var link_relation = "/identityprovider/login";
             var baseRequest = baseURI + link_relation;
             try
             {
-                CookieContainer cookies = new CookieContainer();
-                HttpClientHandler handler = new HttpClientHandler();
-                handler.CookieContainer = cookies;
-
-                using (HttpClient client = new HttpClient(handler))
+                using (HttpClient client = new HttpClient())
                 {
                     client.BaseAddress = new System.Uri(baseRequest);
-                    client.DefaultRequestHeaders.Add("Authorization", "Basic " + Base64Encode(username + ':' + password));
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
                     client.DefaultRequestHeaders.Add("Accept", MEDIA_TYPE_HAL_JSON);
 
-                    var parameters = "?basic=true";
-
-                    var result = client.GetAsync(link_relation + parameters).Result;
+                    var result = client.GetAsync(link_relation).Result;
                     if (result.IsSuccessStatusCode)
                     {
-                        Uri uri = new Uri(baseURI);
-                        IEnumerable<Cookie> responseCookies = cookies.GetCookies(uri).Cast<Cookie>();
-                        string response = null;
-
-                        foreach (Cookie cookie in responseCookies)
-                            if ("AuthSessionId".Equals(cookie.Name))
-                            {
-                                //Important: URL decode the returned value!
-                                response = System.Web.HttpUtility.UrlDecode(cookie.Value);
-                                break;
-                            }
-                        if (null != response)
+                        var authSessionInfo = JsonConvert.DeserializeObject<AuthSessionInfoDto>(result.Content.ReadAsStringAsync().Result);
+                         
+                        if (null != authSessionInfo.AuthSessionId)
                         {
-                            Console.WriteLine("ok: " + baseRequest);
-                            return response;
+                            Console.WriteLine("login ok: " + "expires: " + authSessionInfo.Expire + ", sessionId: " + authSessionInfo.AuthSessionId);
+                            return authSessionInfo.AuthSessionId;
                         }
                     }
                     else
                     {
-                        Console.WriteLine("failed with status code \"" + result.StatusCode + "\": " + baseRequest);
+                        Console.WriteLine("login failed with status code \"" + result.StatusCode + "\": " + baseRequest);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("failed with error \"" + ex.Message + "\": " + baseRequest);
+                Console.WriteLine("login failed with error \"" + ex.Message + "\": " + baseRequest);
             }
             return null;
         }
 
              
         //search document by given metadata
-        private async static Task<string> SearchDocument(string baseURI, string sessionId, string repoId, string searchStringFile)
+        private async static Task<string> SearchDocument(string baseURI, string sessionId, string repoId, string searchFor)
         {
             var link_relation = "/dms/r/" + repoId + "/srm";
             var baseRequest = baseURI + link_relation;
@@ -150,18 +138,16 @@ namespace DMSAPISamples
                 //set Origin header to avoid conflicts with same origin policy
                 client.BaseAddress = new Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionId);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
-
-                string searchString = File.ReadAllText(searchStringFile);
-                baseRequest += searchString;
+                baseRequest += searchFor;
 
                 var result = await client.GetAsync(baseRequest);
                 if (result.IsSuccessStatusCode)
                 {
                     var jsonString = await result.Content.ReadAsStringAsync();
-                    Console.WriteLine("ok: " + baseRequest);
+                    Console.WriteLine("search ok: " + baseRequest);
 
                     dynamic jsonResult = JsonConvert.DeserializeObject<object>(jsonString);
                     foreach (var p in jsonResult.items)
@@ -190,15 +176,14 @@ namespace DMSAPISamples
                 //set Origin header to avoid conflicts with same origin policy
                 client.BaseAddress = new Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionId);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
-                Console.WriteLine("get download url");
                 var result = await client.GetAsync(baseRequest);
                 if (result.IsSuccessStatusCode)
                 {
                     var jsonString = await result.Content.ReadAsStringAsync();
-                    Console.WriteLine("ok: " + baseRequest);
+                    Console.WriteLine("getdocinfo ok: " + baseRequest);
 
                     return jsonString;
                 }
@@ -229,7 +214,7 @@ namespace DMSAPISamples
                 //set Origin header to avoid conflicts with same origin policy
                 client.BaseAddress = new Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionId);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
                 Console.WriteLine("start document download");
@@ -247,6 +232,10 @@ namespace DMSAPISamples
                     Console.WriteLine("document downloaded to " + filePath);
                     return true;
                 }
+                else
+                {
+                    Console.WriteLine("document download failed");
+                }
             }
             return false;
         }
@@ -257,14 +246,12 @@ namespace DMSAPISamples
             var contentLocationUri = "/dms/r/" + repoId + "/blob/chunk";
 
             //first: upload file and get an URI (contentLocationUri) as a reference to this file
-            Console.WriteLine("start file upload");
             contentLocationUri = await UploadFileChunk(baseURI, sessionId, contentLocationUri, filePath);
 
             //second: upload metadata with reference URI (contentLocationUri).
             var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile);
             if (null != documentLink)
             {
-                Console.WriteLine("finished file upload");
                 return documentLink;
             }
             return string.Empty;
@@ -280,7 +267,6 @@ namespace DMSAPISamples
             var chunkFilePath = Path.Combine(path, name + index);
 
             //first: upload file and get an URI (contentLocationUri) as a reference to this file
-            Console.WriteLine("start chunked file upload");
             while (File.Exists(chunkFilePath))
             {
                 contentLocationUri = await UploadFileChunk(baseURI, sessionId, contentLocationUri, chunkFilePath);
@@ -291,7 +277,6 @@ namespace DMSAPISamples
             var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile);
             if (null != documentLink)
             {
-                Console.WriteLine("finished chunked file upload");
                 return documentLink;
             }
             return string.Empty;
@@ -308,7 +293,7 @@ namespace DMSAPISamples
                 //set Origin header to avoid conflicts with same origin policy
                 client.BaseAddress = new System.Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionId);
 
                 //set data content type
                 StreamContent data = new StreamContent(new FileStream(chunkFilePath, FileMode.Open, FileAccess.Read, FileShare.Read));
@@ -317,7 +302,7 @@ namespace DMSAPISamples
                 var result = await client.PostAsync(link_relation, data);
                 if (result.IsSuccessStatusCode)
                 {
-                    Console.WriteLine("ok: " + baseRequest);
+                    Console.WriteLine("uploadchunk ok: " + baseRequest);
                     var response = result.Headers.Location;
                     if (null != response)
                     {
@@ -341,9 +326,8 @@ namespace DMSAPISamples
             {
                 client.BaseAddress = new System.Uri(baseURI);
                 client.DefaultRequestHeaders.Add("Origin", baseURI);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionId);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
-
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + sessionId);
 
                 //read mapping and replace content location uri
                 dynamic dynObj = JsonConvert.DeserializeObject(File.ReadAllText(uploadMappingFile));
@@ -356,12 +340,12 @@ namespace DMSAPISamples
                 var result = await client.PostAsync(link_relation, data);
                 if (result.IsSuccessStatusCode)
                 {
-                    Console.WriteLine("ok: " + baseRequest);
+                    Console.WriteLine("upload ok: " + baseRequest);
                     return result.Headers.Location.ToString();
                 }
                 else
                 {
-                    Console.WriteLine("failed: " + baseRequest);
+                    Console.WriteLine("upload failed: " + baseRequest);
                     return String.Empty;
                 }
             }
