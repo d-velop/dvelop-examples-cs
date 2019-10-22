@@ -18,6 +18,12 @@ namespace DMSAPISamples
             //These samples refer to the RESTful interfaces of the d.ecs apps DMSApp and IdentityProviderApp which 
             //are contained in d.3one. Cloud and on-premises instances can be used both.
 
+            //First of all: These samples uses current api versions. Please use the d.velop cloud or download current 
+            //versions for on-premises instances.
+            //https://portal.d-velop.de/products/de/d-3ecm-services/d-velop-software-manager
+            //https://portal.d-velop.de/products/de/d-3ecm-core-components/d-3one
+          
+
             //Follow these steps before running the code:
 
             //ONE: you need the base uri of your d.3one instance. To get an instance in the d.velop cloud and to 
