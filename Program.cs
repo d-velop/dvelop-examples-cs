@@ -149,10 +149,10 @@ namespace DMSAPISamples
 
                 baseRequest += searchFor;
 
-                var result = await client.GetAsync(baseRequest);
+                var result = await client.GetAsync(baseRequest).ConfigureAwait(false);
                 if (result.IsSuccessStatusCode)
                 {
-                    var jsonString = await result.Content.ReadAsStringAsync();
+                    var jsonString = await result.Content.ReadAsStringAsync().ConfigureAwait(false);
                     Console.WriteLine("search ok: " + baseRequest);
 
                     dynamic jsonResult = JsonConvert.DeserializeObject<object>(jsonString);
@@ -185,10 +185,10 @@ namespace DMSAPISamples
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", sessionId);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
-                var result = await client.GetAsync(baseRequest);
+                var result = await client.GetAsync(baseRequest).ConfigureAwait(false);
                 if (result.IsSuccessStatusCode)
                 {
-                    var jsonString = await result.Content.ReadAsStringAsync();
+                    var jsonString = await result.Content.ReadAsStringAsync().ConfigureAwait(false);
                     Console.WriteLine("getdocinfo ok: " + baseRequest);
 
                     return jsonString;
@@ -224,10 +224,10 @@ namespace DMSAPISamples
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
                 Console.WriteLine("start document download");
-                var result = await client.GetAsync(baseRequest);
+                var result = await client.GetAsync(baseRequest).ConfigureAwait(false); ;
                 if (result.IsSuccessStatusCode)
                 {
-                    Stream stream = await result.Content.ReadAsStreamAsync();
+                    Stream stream = await result.Content.ReadAsStreamAsync().ConfigureAwait(false);
                     Directory.CreateDirectory(downloadFilePath);
                     string filePath = Path.Combine(downloadFilePath, fileName);
                     using (FileStream fs = new FileStream(filePath, FileMode.Create))
@@ -252,10 +252,10 @@ namespace DMSAPISamples
             var contentLocationUri = "/dms/r/" + repoId + "/blob/chunk";
 
             //first: upload file and get an URI (contentLocationUri) as a reference to this file
-            contentLocationUri = await UploadFileChunk(baseURI, sessionId, contentLocationUri, filePath);
+            contentLocationUri = await UploadFileChunk(baseURI, sessionId, contentLocationUri, filePath).ConfigureAwait(false); ;
 
             //second: upload metadata with reference URI (contentLocationUri).
-            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile);
+            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile).ConfigureAwait(false); ;
             if (null != documentLink)
             {
                 return documentLink;
@@ -275,12 +275,12 @@ namespace DMSAPISamples
             //first: upload file and get an URI (contentLocationUri) as a reference to this file
             while (File.Exists(chunkFilePath))
             {
-                contentLocationUri = await UploadFileChunk(baseURI, sessionId, contentLocationUri, chunkFilePath);
+                contentLocationUri = await UploadFileChunk(baseURI, sessionId, contentLocationUri, chunkFilePath).ConfigureAwait(false); ;
                 chunkFilePath = Path.Combine(path, name + ++index);
             }
 
             //second: upload metadata with reference URI (contentLocationUri).
-            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile);
+            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile).ConfigureAwait(false); ;
             if (null != documentLink)
             {
                 return documentLink;
@@ -305,7 +305,7 @@ namespace DMSAPISamples
                 StreamContent data = new StreamContent(new FileStream(chunkFilePath, FileMode.Open, FileAccess.Read, FileShare.Read));
                 data.Headers.ContentType = new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_OCTET_STREAM);
 
-                var result = await client.PostAsync(link_relation, data);
+                var result = await client.PostAsync(link_relation, data).ConfigureAwait(false);
                 if (result.IsSuccessStatusCode)
                 {
                     Console.WriteLine("uploadchunk ok: " + baseRequest);
@@ -343,7 +343,7 @@ namespace DMSAPISamples
                 StringContent data = new StringContent(output);
                 data.Headers.ContentType =  new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON);
 
-                var result = await client.PostAsync(link_relation, data);
+                var result = await client.PostAsync(link_relation, data).ConfigureAwait(false);
                 if (result.IsSuccessStatusCode)
                 {
                     Console.WriteLine("upload ok: " + baseRequest);
