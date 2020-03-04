@@ -76,6 +76,17 @@
     <None Include="sample files\upload_update.pdf" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\DocumentCategory.cs" />
+    <Compile Include="Client\DocumentUploadMapping.cs" />
+    <Compile Include="Client\DocumentLinks.cs" />
+    <Compile Include="Client\DocumentProperty.cs" />
+    <Compile Include="Client\DocumentRepository.cs" />
+    <Compile Include="Client\DocumentSearchResult.cs" />
+    <Compile Include="Client\DocumentSearchResultProperty.cs" />
+    <Compile Include="Client\DocumentClient.cs" />
+    <Compile Include="Client\DocumentSource.cs" />
+    <Compile Include="Client\DocumentSourceProperties.cs" />
+    <Compile Include="Client\DocumentUpdateRequest.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
