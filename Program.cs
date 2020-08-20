@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -20,49 +21,53 @@ namespace DMSAPISamples
 
             //First of all: These samples uses current api versions. Please use the d.velop cloud or download current 
             //versions for on-premises instances.
-            //https://portal.d-velop.de/products/de/d-3ecm-services/d-velop-software-manager
-            //https://portal.d-velop.de/products/de/d-3ecm-core-components/d-3one
-          
 
-            //Follow these steps before running the code:
+            //Follow the steps in this online tutorial before running the code: https://developer.d-velop.de/dev/en/tutorials/dms-api-erste-schritte-zur-anbindung-eines-externen-systems-an-die-dms-app 
 
-            //ONE: you need the base uri of your d.3one instance. To get an instance in the d.velop cloud and to 
-            //choose a base uri, click here: https://store.d-velop.de/9/d.velop-documents
+
+            //ONE: get these values from your d.3one instance:
+
+            //base uri of your d.3one instance. 
             var baseURI = @"https://xxxxxxxxxx.d-velop.cloud";
 
-            //TWO: get an api key for your user in your d.3one instance: In d.one, click on tile "IdentityProvider", 
-            //then on the "fingerprint icon" on the right.
+            //api key for your user in your d.3one instance. Check the users permissions for the desired document types.
             var apiKey = @"xxxxxxxxxxxxxxxxxxxxxx";
 
-            //THREE: get a repository id from your d.3one instance: In d.3one, click on tile "Search", then select 
-            //the repository from the combobox on the top, copy the repository id form the browser URL
+            //repository id from your d.3one instance
             var repoId = @"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
 
-            //FOUR: grant user rights: In d.3one click on tile "Usermanagement", select your user and assign the user group 
-            //"Kundenakte Vollzugriff". Then log off and sign in.
 
-            //FIVE (optional): Provide your own source or proceed with default source "Basisdokumentarten" contained 
-            //in d.velop documents and step 6.
-
-            //SIX: create a mapping between source and content of your d.velop cloud: In d.3one, click on tile "Mappings" and then on 
-            //"create new". Select the source (default: "Basisdokumentarten") and map categories and properties.
-            //Category: "Schriftverkehr Kunde" -> "Schriftverkehr Kunde"
-            //Properties: "Betreff" -> "Betreff (100048)", "Kunden-Nummer" -> "Kunden-Nummer (100124)", "Kunden-Name1" -> "Kunden-Name1 (100147)",
-            //"Beleg-Datum" -> "Beleg-Datum (100046)", "Dateiname" -> "Dateiname (nur lesend)"
-
-            //SEVEN: copy sample files from project folder "sample files" to local directory and set filePath to this directory
-            var filePath = Path.Combine(Path.GetTempPath(), "DMSAPISamples");
-
-            //EIGHT: run this code.
-
-            //url parameters for search sample
-            var searchFor = "?sourceid=/dvelop/documents&sourcecategories=[\"schriftverkehrkunde\"]&sourceproperties={\"belegdatum\":[\"2018-03-11\"]}";
-            //json metadata for document upload sample 
-            var uploadMappingFile = Path.Combine(filePath, "upload.json");
+            //TWO: copy sample files from project folder "sample files" to local directory and set filePath to this directory
 
             //upload file and download path
-            var uploadFile = Path.Combine(filePath, "upload.pdf");
+            var filePath = Path.Combine(Path.GetTempPath(), "DMSAPISamples");
+            var uploadFileName = "upload.pdf";
+            var uploadFile = Path.Combine(filePath, uploadFileName);
             var downloadFilePath = Path.Combine(filePath, "download");
+
+            var uploadDto = new UploadDto();
+            uploadDto.filename = uploadFileName;
+
+
+            //THREE: get these values from your source system:
+
+            //source id of the choosen source system
+            uploadDto.sourceId = @"xxxxx\xxxxx\xx";
+
+            uploadDto.sourceCategory = @"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx";
+
+            //source keys for document properties
+            var sourceKeyFilename = "property_filename";
+            uploadDto.sourceProperties.properties.Add(new PropertyDto("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "Hello world!")); //Betreff
+            uploadDto.sourceProperties.properties.Add(new PropertyDto("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "4711")); //Kundennummer
+            uploadDto.sourceProperties.properties.Add(new PropertyDto("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "ForYou Möbel AG")); //Kundenname
+            uploadDto.sourceProperties.properties.Add(new PropertyDto("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", "2018-03-11")); //Belegdatum
+
+
+            //FOUR: run this code.
+
+            //url parameters for search sample
+            var searchFor = "?sourceid=" + uploadDto.sourceId + "&sourcecategories=[\"schriftverkehrkunde\"]&sourceproperties={\"belegdatum\":[\"2018-03-11\"]}";
 
             //Important: Tls 1.0 is no longer supported! Please use the next line of code for compatibilty settings or 
             //select the most recent .NET Framework for this project!
@@ -75,14 +80,13 @@ namespace DMSAPISamples
             if (null != sessionId)
             {
                 //upload file as a whole or chunked
-                var documentLink = UploadFile(baseURI, sessionId, repoId, uploadFile, uploadMappingFile).Result;
-//                var documentLink = UploadFileChunked(baseURI, sessionId, repoId, uploadFile, uploadMappingFile).Result;
+                var documentLink = UploadFile(baseURI, sessionId, repoId, uploadFile, uploadDto).Result;
                 //show uploaded document in d.3one
                 System.Diagnostics.Process.Start(baseURI + documentLink);
                 //get download url and document properties (returned properties are defined in the source mapping, see above)
                 var documentInfo = GetDocumentInfo(baseURI, sessionId, repoId, documentLink).Result;
                 //download document
-                bool downloaded = DownloadDocument(baseURI, sessionId, repoId, documentInfo, downloadFilePath).Result;
+                bool downloaded = DownloadDocument(baseURI, sessionId, repoId, documentInfo, downloadFilePath, sourceKeyFilename).Result;
                 //search documents
                 var result = SearchDocument(baseURI, sessionId, repoId, searchFor).Result;
             }
@@ -93,6 +97,40 @@ namespace DMSAPISamples
         {
             public string AuthSessionId { get; set; }
             public DateTime Expire { get; set; }
+        }
+
+        private class PropertyDto
+        {
+            public PropertyDto(string key, string firstValue)
+            {
+                this.key = key;
+                values = new List<string>();
+                values.Add(firstValue);
+            }
+
+            public string key { get; set; }
+            public List<string> values { get; set; }
+        }
+
+        private class SourcePropertiesDto { 
+            public SourcePropertiesDto()
+            {
+                properties = new List<PropertyDto>();
+            }
+            public List<PropertyDto> properties { get; set; }
+        }
+
+        private class UploadDto
+        {
+            public UploadDto()
+            {
+                sourceProperties = new SourcePropertiesDto();
+            }
+            public string filename { get; set; }
+            public string sourceCategory { get; set; }
+            public string sourceId { get; set; }
+            public string contentLocationUri { get; set; }
+            public SourcePropertiesDto sourceProperties { get; set; }
         }
 
         //authenticate with user credentials and basic authentication
@@ -197,7 +235,7 @@ namespace DMSAPISamples
             return null;
         }
 
-        private async static Task<bool> DownloadDocument(string baseURI, string sessionId, string repoId, string jsonDocumentInfo, string downloadFilePath)
+        private async static Task<bool> DownloadDocument(string baseURI, string sessionId, string repoId, string jsonDocumentInfo, string downloadFilePath, string propFilename)
         {
             dynamic documentInfo = JsonConvert.DeserializeObject<object>(jsonDocumentInfo);
             var link_relation =  documentInfo._links.mainblobcontent.href;
@@ -206,7 +244,7 @@ namespace DMSAPISamples
             var fileName = "";
             foreach (var prop in documentInfo.sourceProperties)
             {
-                if (prop.key == "dateiname")
+                if (prop.key == propFilename)
                 {
                     fileName = prop.value;
                     break;
@@ -247,7 +285,7 @@ namespace DMSAPISamples
         }
 
         //upload file in a whole
-        private async static Task<string> UploadFile(string baseURI, string sessionId, string repoId, string filePath, string uploadMappingFile)
+        private async static Task<string> UploadFile(string baseURI, string sessionId, string repoId, string filePath, UploadDto uploadDto)
         {
             var contentLocationUri = "/dms/r/" + repoId + "/blob/chunk";
 
@@ -255,7 +293,7 @@ namespace DMSAPISamples
             contentLocationUri = await UploadFileChunk(baseURI, sessionId, contentLocationUri, filePath).ConfigureAwait(false); ;
 
             //second: upload metadata with reference URI (contentLocationUri).
-            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile).ConfigureAwait(false); ;
+            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadDto).ConfigureAwait(false); ;
             if (null != documentLink)
             {
                 return documentLink;
@@ -264,7 +302,7 @@ namespace DMSAPISamples
         }
 
         //upload file in chunks
-        private async static Task<string> UploadFileChunked(string baseURI, string sessionId, string repoId, string filePath, string uploadMappingFile)
+        private async static Task<string> UploadFileChunked(string baseURI, string sessionId, string repoId, string filePath, UploadDto uploadDto)
         {
             var path = Path.GetDirectoryName(filePath);
             var name = Path.GetFileNameWithoutExtension(filePath);
@@ -280,7 +318,7 @@ namespace DMSAPISamples
             }
 
             //second: upload metadata with reference URI (contentLocationUri).
-            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadMappingFile).ConfigureAwait(false); ;
+            var documentLink = await FinishFileUpload(baseURI, sessionId, repoId, contentLocationUri, filePath, uploadDto).ConfigureAwait(false); ;
             if (null != documentLink)
             {
                 return documentLink;
@@ -323,7 +361,7 @@ namespace DMSAPISamples
         }
 
 
-        private static async Task<string> FinishFileUpload(string baseURI, string sessionId, string repoId, string contentLocationUri, string filePath, string uploadMappingFile)
+        private static async Task<string> FinishFileUpload(string baseURI, string sessionId, string repoId, string contentLocationUri, string filePath, UploadDto uploadDto)
         {
             var link_relation = "/dms/r/" + repoId + "/o2m";
             var baseRequest = baseURI + link_relation;
@@ -336,9 +374,8 @@ namespace DMSAPISamples
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON));
 
                 //read mapping and replace content location uri
-                dynamic dynObj = JsonConvert.DeserializeObject(File.ReadAllText(uploadMappingFile));
-                dynObj.contentLocationUri = contentLocationUri;
-                string output = JsonConvert.SerializeObject(dynObj);
+                uploadDto.contentLocationUri = contentLocationUri;
+                string output = JsonConvert.SerializeObject(uploadDto);
 
                 StringContent data = new StringContent(output);
                 data.Headers.ContentType =  new MediaTypeWithQualityHeaderValue(MEDIA_TYPE_HAL_JSON);

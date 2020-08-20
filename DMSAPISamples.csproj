@@ -65,10 +65,8 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="sample files\source.json" />
     <None Include="App.config" />
     <None Include="packages.config" />
-    <None Include="sample files\upload.json" />
     <None Include="sample files\upload.pdf" />
     <None Include="sample files\upload0" />
     <None Include="sample files\upload1" />
